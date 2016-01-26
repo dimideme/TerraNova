@@ -31,6 +31,7 @@ public class ContinentMap {
     //The array which holds all the data, interleaved like so:
     //	    x, y, z, r, g, b, a
     protected float[] verts = new float[MAX_VERTS * NUM_COMPONENTS];
+    // TODO: create and use an array of indices
 
     //The current index that we are pushing triangles into the array
     protected int idx = 0;
@@ -41,7 +42,7 @@ public class ContinentMap {
     }
 
     public float[] getVerts() {
-        //Gdx.app.log( TerraNova.LOG, "ContinentMap: getVerts()" );
+        Gdx.app.log( TerraNova.LOG, "ContinentMap: getVerts()" );
         return verts;
     }
 

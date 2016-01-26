@@ -1,6 +1,5 @@
 package com.demergis.terranova;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
@@ -9,14 +8,10 @@ import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 
 
 public class MapScreen implements Screen {
@@ -42,9 +37,6 @@ public class MapScreen implements Screen {
 	public float[] vertexData = new float[MAX_VERTS * NUM_COMPONENTS];  	//The array which holds all the data, interleaved like so:
                                                                             // (x1, y1, z1, r1, g1, b1, a1, x2, y2, z2...)
 
-    //private TextButton exploreButton;
-    //private ButtonSelectionListener buttonSelectionListener;
-	
 	public static final String VERT_SHADER =  
 			"attribute vec3 a_position;\n" +
 			"attribute vec4 a_color;\n" +			
@@ -94,11 +86,7 @@ public class MapScreen implements Screen {
         cam.zoom = 2f;
         cam.position.set(0f, 0f, 400f);
         cam.lookAt(0f, 0f, 0f);
-        
         cam.update();
-
-        FitViewport viewp = new FitViewport(screenWidth, screenHeight, cam);
-        game.stage = new Stage(viewp, game.batch);
         
 	    mesh = new Mesh(true, MAX_VERTS, 0,
 	            new VertexAttribute(Usage.Position, POSITION_COMPONENTS, "a_position"),
@@ -128,25 +116,19 @@ public class MapScreen implements Screen {
     public void render( float delta ) {
         //Gdx.app.log( TerraNova.LOG, "MapScreen: render()" );
 
+        // Initialize gl graphics
         Gdx.gl.glClearColor( 0f, 0f, 0f, 1f );
         Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT );
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getWidth());
         
-        // update the state of all actors on stage
-        game.stage.act( delta );
-        
-        // update the camera
+        // Update the camera
         updateCamera();
         
-        // draw the map
+        // Draw the map
         renderMap();
-        
-        // draw the stage actors
-        game.stage.draw();
 
-        // #3 - Draw UI elements on top
+        // Draw UI elements on top
         Matrix4 uiMatrix = cam.combined.cpy();
         uiMatrix.setToOrtho2D(0, 0, screenWidth, screenHeight);
         game.batch.setProjectionMatrix(uiMatrix);
@@ -161,31 +143,31 @@ public class MapScreen implements Screen {
     private void renderMap() {
         //Gdx.app.log( TerraNova.LOG, "MapScreen: renderMap()" );
 
-        //if we've already flushed
+        // if we've already flushed
         if ( map.getVertexCount() == 0) {
             Gdx.app.log( TerraNova.LOG, "MapScreen: already flushed" );
             return;
         }
 
-        //no need for depth...
+        // no need for depth...
         Gdx.gl.glDepthMask(false);
 
-        //enable blending, for alpha
+        // enable blending, for alpha
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-        //start the shader before setting any uniforms
+        // start the shader before setting any uniforms
         shader.begin();
 
-        //update the projection matrix so our triangles are rendered in 2D
+        // update the projection matrix so our triangles are rendered in 2D
         shader.setUniformMatrix("u_projTrans", cam.combined);
 
-        //render the mesh
+        // render the mesh
         mesh.render(shader, GL20.GL_TRIANGLES, 0, map.getVertexCount() );
 
         shader.end();
 
-        //re-enable depth to reset states to their default
+        // re-enable depth to reset states to their default
         Gdx.gl.glDepthMask(true);
     }
 

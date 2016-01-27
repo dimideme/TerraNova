@@ -9,6 +9,11 @@ public class Triangle {
 
     public Vector3[] vertices;
 
+    // Environment-related flags, set by MapManager::determineEnvironment()
+    public boolean isCoastalPoint;      // indicates whether one point is at or below sea level
+    public boolean isCoastalSegment;    // indicates whether two points are at or below sea level
+    public boolean isUnderwater;        // indicates whether all three points are at or below sea level
+
     public Triangle() {
         vertices = new Vector3[3];
         //isDiscovered = false;

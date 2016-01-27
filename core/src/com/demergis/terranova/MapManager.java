@@ -30,16 +30,18 @@ public class MapManager {
     private ShortArray delIndices;		// result of delaunay triangulation, list of indices into delPoint pairs
     private ArrayList<Triangle> triangles;   // final list of triangles, with x,y,z coordinates
 
-    private float latMin = -1000f;
-    private float latMax = 1000f;
-    private float longMin = -1000f;
-    private float longMax = 1000f;
-    private float latSpan = latMax - latMin;
-    private float longSpan = longMax - longMin;
-    private int pointsX = (int) ( longSpan / 10 );			// number of points placed along X axis (number of columns)
-    private int pointsY = (int) ( latSpan / 10 );			// number of points placed along Y axis (number of rows)
+    private float latMin = -1000f;      // upper (northern) bound of world space, in miles
+    private float latMax = 1000f;       // lower (southern) bound of world space, in miles
+    private float longMin = -1000f;     // left (western) bound of world space, in miles
+    private float longMax = 1000f;      // right (eastern) bound of world space, in miles
+    private float latSpan = latMax - latMin;    // total height of world space, in miles
+    private float longSpan = longMax - longMin; // total width of world space, in miles
+    private float pointsPerUnitScalingFactor = 0.1f;                        // represents the number of points to place per unit of world coordinates
+                                                                            // e.g. a scaling factor of 10 means that 200 points will be used for a width of 2000 miles
+    private int pointsX = (int) ( longSpan * pointsPerUnitScalingFactor );			// number of points placed along X axis (number of columns)
+    private int pointsY = (int) ( latSpan * pointsPerUnitScalingFactor );			// number of points placed along Y axis (number of rows)
 
-    private float zCeiling, zFloor, zSeaLevel, zMax, zMin, zDiff;
+    private float zCeiling, zFloor, zSeaLevel, zMax, zMin, zSpan;
 
     public MapManager() {
 
@@ -55,7 +57,7 @@ public class MapManager {
         zSeaLevel = 55f;
         zMax = zFloor;
         zMin = zCeiling;
-        zDiff = zMax - zMin;
+        zSpan = zMax - zMin;
 
     }
 
@@ -63,29 +65,29 @@ public class MapManager {
 
         Gdx.app.log( TerraNova.LOG, "MapManager: getMap()" );
 
-        // scatter points
+        // Step 1 - scatter points
         scatterPoints(new Random());
 
-        // add z-dimension		
+        // Step 2 - add z-dimension
         if( mapId.equals("random") )
             setRandomZValues(new Random());
         else
             readZValues(mapId);
 
-        // set negative z-values to 0
+        // Step 3 - set negative z-values to 0
         clipNegativeZValues();
 
-        // compute delaunay indices, and use them to build triangles  
+        // Step 4 - compute Delaunay indices, and use them to build triangles
         //computeDelaunayIndices();
         //createDelaunayTriangles();
 
-        // use a naive method to build triangles
+        // Step 4alt - use a naive method to build triangles - simpler version of Delaunay method
         createSimpleTriangles();
 
-        // determine moisture, altitude, latitude of triangles
+        // Step 5 - determine moisture, altitude, latitude of triangles
         determineEnvironment();
 
-        // determine color and add triangles to map
+        // Step 6 - determine color and add triangles to map
         determineColorAndAddToMap(zMax);
 
         return map;
@@ -103,6 +105,7 @@ public class MapManager {
         }
     }
 
+    // This method is used for random maps, z-values are computed with a sum-of-sines method
     private void setRandomZValues(Random random) {
         Gdx.app.log( TerraNova.LOG, "MapManager: generateRandomMap(): adding z-dimension" );
 
@@ -117,7 +120,7 @@ public class MapManager {
                 float z = points[i][j].z;
                 if( z > zMax ) zMax = z;
                 if( z < zMin ) zMin = z;
-                zDiff = zMax - zMin;
+                zSpan = zMax - zMin;
 
             }
         }
@@ -125,7 +128,7 @@ public class MapManager {
         System.out.println("zmin, zmax = " + zMin + ", " + zMax);
     }
 
-
+    // This method is used for pre-loaded maps: z-values are read directly from the heightmap
     private void readZValues( String mapId ) {
         Gdx.app.log( TerraNova.LOG, "MapManager: loadMap(): readZValues()" );
 
@@ -217,16 +220,16 @@ public class MapManager {
 
     public void determineEnvironment() {
 
-        // determine whether triangle constitutes part of coastline
+        // for each triangle, determine whether triangle constitutes part of a coastline
         for( Triangle t : triangles ) {
 
-            int pointsAbove = 0;
+            int numPointsAboveSeaLevel = 0;
             for( int i = 0; i < 3; i++ ) {
-                if ( t.vertices[i].z > zSeaLevel ) pointsAbove++;
+                if ( t.vertices[i].z > zSeaLevel ) numPointsAboveSeaLevel++;
             }
-            //t.isUnderwater = ( pointsAbove == 0 );
-            //t.isCoastalPoint = ( pointsAbove == 1 );
-            //t.isCoastalSegment = ( pointsAbove == 2 );
+            t.isUnderwater = ( numPointsAboveSeaLevel == 0 );
+            t.isCoastalPoint = ( numPointsAboveSeaLevel == 1 );
+            t.isCoastalSegment = ( numPointsAboveSeaLevel == 2 );
 
         }
 
@@ -241,14 +244,14 @@ public class MapManager {
             Color[] color = new Color[3];   // array of colors for the three points of the triangle
             for( int i = 0; i < 3; i++ ) {
 
-                if( t.vertices[i].z <= zSeaLevel /*&& !t.isUnderwater*/ )
+                if( t.vertices[i].z <= zSeaLevel && !t.isUnderwater )
                     color[i] = new Color( 237f/256, 201f/256, 175f/256, 1.0f );   // Sand
-                else if( t.vertices[i].z <= zSeaLevel /*&& t.isUnderwater*/ )
+                else if( t.vertices[i].z <= zSeaLevel && t.isUnderwater )
                     color[i] = new Color( 0f, 0f, 0.5f, 1.0f );  // Navy Blue
-                else if( t.vertices[i].z > 0.8f * zDiff + zMin ) color[i] = Color.WHITE;
-                else if( t.vertices[i].z > 0.7f * zDiff + zMin ) color[i] = Color.DARK_GRAY;
-                else if( t.vertices[i].z > 0.6f * zDiff + zMin ) color[i] = Color.GRAY;
-                else if( t.vertices[i].z > 0.4f * zDiff + zMin ) color[i] = new Color( 0.8f, 0.8f, 0.3f, 1.0f ); // BROWN
+                else if( t.vertices[i].z > 0.8f * zSpan + zMin ) color[i] = Color.WHITE;
+                else if( t.vertices[i].z > 0.7f * zSpan + zMin ) color[i] = Color.DARK_GRAY;
+                else if( t.vertices[i].z > 0.6f * zSpan + zMin ) color[i] = Color.GRAY;
+                else if( t.vertices[i].z > 0.4f * zSpan + zMin ) color[i] = new Color( 0.8f, 0.8f, 0.3f, 1.0f ); // BROWN
                 else color[i] = Color.GREEN;
 
             }

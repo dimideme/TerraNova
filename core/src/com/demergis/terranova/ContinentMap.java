@@ -31,7 +31,7 @@ public class ContinentMap {
     //The array which holds all the data, interleaved like so:
     //	    x, y, z, r, g, b, a
     protected float[] verts = new float[MAX_VERTS * NUM_COMPONENTS];
-    // TODO: create and use an array of indices
+    // TODO: create and use an array of indices to improve performance?
 
     //The current index that we are pushing triangles into the array
     protected int idx = 0;

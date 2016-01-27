@@ -6,12 +6,15 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 
 public class MapScreen implements Screen {
@@ -20,7 +23,8 @@ public class MapScreen implements Screen {
 
 	private final ContinentMap map;
 
-	private OrthographicCamera cam;
+	private PerspectiveCamera camera;
+    private Viewport viewport;
 
 	private Mesh mesh;
 	private ShaderProgram shader;
@@ -73,20 +77,26 @@ public class MapScreen implements Screen {
 
         this.game = g;
 		
-		map = game.mapManager.createMap( "random" );
+		map = TerraNova.mapManager.createMap("random");
         vertexData = map.getVerts();
 		
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
 
-        cam = new OrthographicCamera();
-        cam.setToOrtho(false, screenWidth, screenHeight);
-        cam.near = 400f;
-        cam.far = -100f;
-        cam.zoom = 2f;
-        cam.position.set(0f, 0f, 400f);
-        cam.lookAt(0f, 0f, 0f);
-        cam.update();
+        float aspectRatio = screenWidth / screenHeight;
+        camera = new PerspectiveCamera(67, screenWidth, screenHeight );
+        viewport = new FitViewport( screenWidth, screenHeight, camera );
+        camera.position.set(0f, 800f, 2700f);
+        camera.lookAt(0,0,0);
+        camera.near = 4000f;
+        camera.far = -1000f;
+
+//        camera.near = 400f;
+//        camera.far = -100f;
+//        camera.zoom = 2f;
+//        camera.position.set(0f, 0f, 400f);
+//        camera.lookAt(0f, 0f, 0f);
+        camera.update();
         
 	    mesh = new Mesh(true, MAX_VERTS, 0,
 	            new VertexAttribute(Usage.Position, POSITION_COMPONENTS, "a_position"),
@@ -108,8 +118,8 @@ public class MapScreen implements Screen {
     public void resize( int w, int h ) {
         //Gdx.app.log(TerraNova.LOG, "MapScreen: resize()");
 
-        cam.setToOrtho(false, w, h);
-        cam.update();
+        viewport.update( w, h );
+        camera.update();
     }
     
     @Override
@@ -117,8 +127,8 @@ public class MapScreen implements Screen {
         //Gdx.app.log( TerraNova.LOG, "MapScreen: render()" );
 
         // Initialize gl graphics
-        Gdx.gl.glClearColor( 0f, 0f, 0f, 1f );
-        Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT );
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getWidth());
         
@@ -129,13 +139,15 @@ public class MapScreen implements Screen {
         renderMap();
 
         // Draw UI elements on top
-        Matrix4 uiMatrix = cam.combined.cpy();
+        Matrix4 uiMatrix = camera.combined.cpy();
         uiMatrix.setToOrtho2D(0, 0, screenWidth, screenHeight);
         game.batch.setProjectionMatrix(uiMatrix);
         game.batch.begin();
 
-        game.bitmapFont.draw( game.batch, "AWSD to move camera, ZQ forward/back, CV zoom in/out", 20, 40 );
-        game.bitmapFont.draw( game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond() + ", timeRatio: " + TimeManager.timeRatio, 20, 20);
+        game.bitmapFont.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond() + ", timeRatio: " + TimeManager.timeRatio, 20, 80);
+        game.bitmapFont.draw(game.batch, "AWSD to move camera, ER rotate, ZQ forward/back, CV zoom in/out, JK change field of view", 20, 60);
+        game.bitmapFont.draw( game.batch, "Camera Position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z, 20, 40);
+        game.bitmapFont.draw( game.batch, "Camera FoV: " + camera.fieldOfView, 20, 20);
         game.batch.end();
         
     }
@@ -160,7 +172,7 @@ public class MapScreen implements Screen {
         shader.begin();
 
         // update the projection matrix so our triangles are rendered in 2D
-        shader.setUniformMatrix("u_projTrans", cam.combined);
+        shader.setUniformMatrix("u_projTrans", camera.combined);
 
         // render the mesh
         mesh.render(shader, GL20.GL_TRIANGLES, 0, map.getVertexCount() );
@@ -175,36 +187,50 @@ public class MapScreen implements Screen {
 		
 		// update the camera position
         if(Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)){
-        	cam.translate(-2.0f, 0.0f, 0.0f);
+            camera.translate(-2.0f, 0.0f, 0.0f);
+            Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z );
         }
         if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)){
-        	cam.translate(2.0f, 0.0f, 0.0f);
+            camera.translate(2.0f, 0.0f, 0.0f);
+            Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
         }
         if(Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W)){
-        	cam.translate(0.0f, 2.0f, 0.0f);
+            camera.translate(0.0f, 2.0f, 0.0f);
+            Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
         }
         if(Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S)){
-        	cam.translate(0.0f, -2.0f, 0.0f);
+            camera.translate(0.0f, -2.0f, 0.0f);
+            Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
         }
         if(Gdx.input.isKeyPressed(Input.Keys.Z)){
-        	cam.translate(0.0f, 0.0f, 2.0f);
+            camera.translate(0.0f, 0.0f, 2.0f);
+            Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
         }
         if(Gdx.input.isKeyPressed(Input.Keys.Q)){
-        	cam.translate(0.0f, 0.0f, -2.0f);
+            camera.translate(0.0f, 0.0f, -2.0f);
+            Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.J)){
+            camera.fieldOfView++;
+            Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera FoV: " + camera.fieldOfView);
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.K)){
+            camera.fieldOfView--;
+            Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera FoV: " + camera.fieldOfView);
         }
         if(Gdx.input.isKeyPressed(Input.Keys.E)){
-        	cam.rotateAround(cam.position, new Vector3(0,0,1), (float)(-30*Math.PI/360.) );
+            camera.rotateAround(camera.position, new Vector3(0,0,1), (float)(-30*Math.PI/360.) );
         }
         if(Gdx.input.isKeyPressed(Input.Keys.R)){
-        	cam.rotateAround(cam.position, new Vector3(0,0,1), (float)(30*Math.PI/360.) );
+            camera.rotateAround(camera.position, new Vector3(0,0,1), (float)(30*Math.PI/360.) );
         }
         if(Gdx.input.isKeyPressed(Input.Keys.C)){
-        	cam.zoom*=1.05;
+            //camera.zoom*=1.05;
         }
         if(Gdx.input.isKeyPressed(Input.Keys.V)){
-        	cam.zoom/=1.05;
+            //camera.zoom/=1.05;
         }
-        cam.update();
+        camera.update();
 	}
 
     @Override

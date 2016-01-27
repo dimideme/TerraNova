@@ -112,11 +112,11 @@ public class MapManager {
         for( int i = 1; i < pointsX-1; i++ ) {
             for( int j = 1; j < pointsY-1; j++ ) {
                 points[i][j].z =
-                        0.2f * ( 60 + (float)Math.sin( i * 2 * Math.PI / pointsX ) ) +
-                                0.2f * ( 60 + (float)Math.sin( i * 20 * Math.PI / pointsX ) ) +
-                                0.2f * ( 60 + (float)Math.sin( j * 2 * Math.PI / pointsY ) ) +
-                                0.2f * ( 60 + (float)Math.sin( j * 20 * Math.PI / pointsY ) ) +
-                                0.2f * ( 60 + (float)( random.nextFloat() - 0.5f ) );
+                        0.2f * ( 60 + (float)Math.sin( i * 1 * Math.PI / pointsX ) ) +
+                                0.2f * ( 60 + (float)Math.sin( i * 10 * Math.PI / pointsX ) ) +
+                                0.2f * ( 60 + (float)Math.sin( j * 1 * Math.PI / pointsY ) ) +
+                                0.2f * ( 60 + (float)Math.sin( j * 10 * Math.PI / pointsY ) ) +
+                                0.2f * ( 60 + random.nextFloat() - 0.5f);
                 float z = points[i][j].z;
                 if( z > zMax ) zMax = z;
                 if( z < zMin ) zMin = z;

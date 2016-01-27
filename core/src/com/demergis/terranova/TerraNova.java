@@ -21,8 +21,6 @@ public class TerraNova extends Game {
     public float screenWidth;
     public float screenHeight;
 
-    public OrthographicCamera camera;
-
 	@Override
 	public void create () {
 
@@ -35,12 +33,6 @@ public class TerraNova extends Game {
 
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
-
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, screenWidth, screenHeight);
-        camera.viewportWidth = screenWidth;
-        camera.viewportHeight = screenHeight;
-        camera.update();
 
         Gdx.app.log(TerraNova.LOG, "TerraNova: create(): Setting screen to new MapScreen");
         this.setScreen(new MapScreen(this));
@@ -58,10 +50,6 @@ public class TerraNova extends Game {
         Gdx.app.log( TerraNova.LOG, "TerraNova: resize()" );
         this.screenWidth = width;
         this.screenHeight = height;
-
-        // need to adjust camera based on new screen size
-        camera.setToOrtho(false, width, height);
-        camera.update();
     }
 
     @Override

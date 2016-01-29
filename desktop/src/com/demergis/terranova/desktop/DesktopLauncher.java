@@ -9,8 +9,8 @@ public class DesktopLauncher {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 
         int fps = 60;
-        config.width = 1280;
-        config.height = 720;
+        config.width = 1600;
+        config.height = 900;
 
 		new LwjglApplication(new TerraNova(), config);
 	}

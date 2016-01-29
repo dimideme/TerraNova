@@ -52,9 +52,9 @@ public class MapManager {
         delIndices = new ShortArray();
         triangles = new ArrayList<Triangle>();
 
-        zCeiling = 1000f;
+        zCeiling = 500f;
         zFloor = 0f;
-        zSeaLevel = 55f;
+        zSeaLevel = 100f;
         zMax = zFloor;
         zMin = zCeiling;
         zSpan = zMax - zMin;
@@ -142,14 +142,18 @@ public class MapManager {
             for( int j = 1; j < pointsY; j++ ) {
                 int pixelX = (int)( ( points[i][j].x - longMin ) * imageWidth / longSpan );
                 int pixelY = imageHeight - (int)( ( points[i][j].y - latMin ) * imageHeight / latSpan );
-                points[i][j].z = pixmap.getPixel( pixelX, pixelY ) / (float)Math.pow(2, 32) * zCeiling;
+                float z = (float) ( pixmap.getPixel( pixelX, pixelY ) * zCeiling / Math.pow(2, 32) );
 
-                float z = points[i][j].z;
+                //if ( z < 0 ) Gdx.app.log( TerraNova.LOG, "MapManager: loadMap(): readZValues(): Pixel (" + i + ", " + j + "), getPixel = " + pixmap.getPixel( pixelX, pixelY ) + ", resulting z = " + z  );
+
+                points[i][j].z = z;
                 if( z > zMax ) zMax = z;
                 if( z < zMin ) zMin = z;
 
             }
         }
+
+        //Gdx.app.log( TerraNova.LOG, "MapManager: loadMap(): readZValues(): zMax: " + zMax + ", zMin: " + zMin );
     }
 
 
@@ -216,6 +220,8 @@ public class MapManager {
                 if( points[i][j].z < 0 ) points[i][j].z = 0;
             }
         }
+        zMin = 0;
+        zSpan = zMax - zMin;
     }
 
     public void determineEnvironment() {

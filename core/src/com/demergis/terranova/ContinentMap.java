@@ -23,7 +23,7 @@ public class ContinentMap {
     public static final int PRIMITIVE_SIZE = 3 * NUM_COMPONENTS;
 
     //The maximum number of triangles our mesh will hold
-    public static final int MAX_TRIS = 500000;
+    public static final int MAX_TRIS = 2000000;
 
     //The maximum number of vertices our mesh will hold
     public static final int MAX_VERTS = MAX_TRIS * 3;

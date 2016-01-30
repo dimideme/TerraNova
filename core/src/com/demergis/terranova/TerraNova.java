@@ -35,7 +35,7 @@ public class TerraNova extends Game {
         screenHeight = Gdx.graphics.getHeight();
 
         Gdx.app.log(TerraNova.LOG, "TerraNova: create(): Setting screen to new MapScreen");
-        this.setScreen(new MapScreen(this));
+        this.setScreen(new MenuScreen(this));
         super.render();  // Need to call this immediately after setScreen, otherwise screens won't render!
 
 	}

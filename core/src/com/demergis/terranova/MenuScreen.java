@@ -2,88 +2,128 @@ package com.demergis.terranova;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 
 public class MenuScreen implements Screen {
 
-	public MenuScreen(TerraNova game, SpriteBatch batch) {
-		// TODO Auto-generated constructor stub
+    private Skin skin;
+    private Stage stage;
+    private SpriteBatch batch;
+
+
+	public MenuScreen( TerraNova g ) {
+        final TerraNova game = g;
+        this.batch = game.batch;
+        stage = new Stage();
+        Gdx.input.setInputProcessor(stage);
+
+        createBasicSkin();
+
+        final TextButton randomMapButton = new TextButton("Random Map", skin); // Use the initialized skin
+        randomMapButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 + 200);
+        stage.addActor(randomMapButton);
+
+        final TextButton northAmericaButton = new TextButton("North America", skin); // Use the initialized skin
+        northAmericaButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 + 100);
+        stage.addActor(northAmericaButton);
+
+        final TextButton japanButton = new TextButton("Japan", skin); // Use the initialized skin
+        japanButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 );
+        stage.addActor(japanButton);
+
+        final TextButton irelandButton = new TextButton("Ireland", skin); // Use the initialized skin
+        irelandButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 - 100 );
+        stage.addActor(irelandButton);
+
+        final TextButton exitButton = new TextButton("Exit", skin); // Use the initialized skin
+        exitButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 - 200 );
+        stage.addActor(exitButton);
+
+        // Add a listener to the button. ChangeListener is fired when the button's checked state changes, eg when clicked,
+        // Button#setChecked() is called, via a key press, etc. If the event.cancel() is called, the checked state will be reverted.
+        // ClickListener could have been used, but would only fire when clicked. Also, canceling a ClickListener event won't
+        // revert the checked state.
+        randomMapButton.addListener(new ChangeListener() {
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new MapScreen(game, "random"));
+            }
+        });
+        northAmericaButton.addListener(new ChangeListener() {
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new MapScreen(game, "NorthAmerica"));
+            }
+        });
+        japanButton.addListener(new ChangeListener() {
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new MapScreen(game, "Japan"));
+            }
+        });
+        irelandButton.addListener(new ChangeListener() {
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new MapScreen(game, "Ireland"));
+            }
+        });
+        exitButton.addListener(new ChangeListener() {
+            public void changed(ChangeEvent event, Actor actor) {
+                Gdx.app.exit();
+            }
+        });
 	}
+
+    private void createBasicSkin(){
+        // Create a font
+        BitmapFont font = new BitmapFont();
+        skin = new Skin();
+        skin.add("default", font);
+
+        // Create a texture
+        Pixmap pixmap = new Pixmap((int)Gdx.graphics.getWidth()/4,(int)Gdx.graphics.getHeight()/10, Pixmap.Format.RGB888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        skin.add("background",new Texture(pixmap));
+
+        // Create a button style
+        TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
+        textButtonStyle.up = skin.newDrawable("background", Color.GRAY);
+        textButtonStyle.down = skin.newDrawable("background", Color.DARK_GRAY);
+        textButtonStyle.checked = skin.newDrawable("background", Color.DARK_GRAY);
+        textButtonStyle.over = skin.newDrawable("background", Color.LIGHT_GRAY);
+        textButtonStyle.font = skin.getFont("default");
+        skin.add("default", textButtonStyle);
+
+    }
 
     @Override
     public void show() {
-
-        /*
-        // retrieve the default table actor
-        Table table = super.getTable();
-        table.add( "Terra Nova" ).spaceBottom( 50 );
-        table.row();
-
-        // register the "Game Setup" button
-        TextButton setupButton = new TextButton( "Game Setup", getSkin() );
-        setupButton.addListener( new DefaultActorListener() {
-            @Override
-            public void touchUp( InputEvent event, float x, float y, int pointer, int button ) {
-                super.touchUp( event, x, y, pointer, button );
-                //game.getSoundManager().play( TerraNovaSound.CLICK );
-                game.setScreen( new SetupScreen( game ) );
-            }
-        } );
-        table.add( setupButton ).size( 300, 60 ).uniform().spaceBottom( 10 );
-        table.row();
-        
-        // register the "Exit" button
-        TextButton exitButton = new TextButton( "Exit", getSkin() );
-        setupButton.addListener( new DefaultActorListener() {
-            @Override
-            public void touchUp( InputEvent event, float x, float y, int pointer, int button ) {
-                super.touchUp( event, x, y, pointer, button );
-                //game.getSoundManager().play( TerraNovaSound.CLICK );
-                //TODO: exit game
-            }
-        } );
-        table.add( exitButton ).size( 300, 60 ).uniform().spaceBottom( 10 );
-        table.row();
-        */
-
-		/*
-		// creates the table actor
-		Table table = new Table();
-		// 100% width and 100% height on the table (fills the stage)
-		table.setFillParent(true);
-		// add the table to the stage
-		stage.addActor(table);
-		// add the welcome message with a margin-bottom of 50 units
-		table.add( "Welcome to Tyrian for Android!" ).spaceBottom( 50 );
-		// move to the next row
-		table.row();
-		// add the start-game button sized 300x60 with a margin-bottom of 10 units
-		table.add( startGameButton ).size( 300f, 60f ).uniform().spaceBottom( 10 );
-		// move to the next row
-		table.row();
-		// add the options button in a cell similiar to the start-game button's cell
-		table.add( optionsButton ).uniform().fill().spaceBottom( 10 );
-		// move to the next row
-		table.row();
-		// add the high-scores button in a cell similiar to the start-game button's cell
-		table.add( highScoresButton ).uniform().fill();
-		*/
-
-
-
     }
 
     @Override
     public void render( float delta ) {
-        Gdx.app.log( TerraNova.LOG, "MenuScreen: render()" );
+        Gdx.app.log(TerraNova.LOG, "MenuScreen: render()");
+        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+        stage.draw();
+        //Table.drawDebug(stage);
     }
 
     @Override
-    public void resize( int w, int h ) {
+    public void resize(int w, int h) {
         Gdx.app.log( TerraNova.LOG, "MenuScreen: resize()" );
+        stage.getCamera().viewportWidth = w;
+        stage.getCamera().viewportHeight = h;
     }
 
     @Override
@@ -104,6 +144,8 @@ public class MenuScreen implements Screen {
     @Override
     public void dispose() {
         Gdx.app.log( TerraNova.LOG, "MenuScreen: dispose()" );
+        stage.dispose();
+        skin.dispose();
     }
-	
+
 }

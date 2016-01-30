@@ -41,7 +41,7 @@ public class MapScreen implements Screen {
 	public static final int COLOR_COMPONENTS = 4;					    //Color attribute - (r, g, b, a)
 	public static final int NUM_COMPONENTS = POSITION_COMPONENTS + COLOR_COMPONENTS; 	//Total number of components for all attributes
 	public static final int PRIMITIVE_SIZE = 3 * NUM_COMPONENTS;  	    //The "size" (total number of floats) for a single triangle
-	public static final int MAX_TRIS = 500000;  						//The maximum number of triangles our mesh will hold
+	public static final int MAX_TRIS = 2000000;  						//The maximum number of triangles our mesh will hold
 	public static final int MAX_VERTS = MAX_TRIS * 3;  				        //The maximum number of vertices our mesh will hold
 	public float[] vertexData = new float[MAX_VERTS * NUM_COMPONENTS];  	//The array which holds all the data, interleaved like so:
                                                                             // (x1, y1, z1, r1, g1, b1, a1, x2, y2, z2...)
@@ -76,13 +76,13 @@ public class MapScreen implements Screen {
 		return shader;
 	}
 	
-	public MapScreen( TerraNova g ) {
+	public MapScreen( TerraNova g, String mapId ) {
 		
         Gdx.app.log( TerraNova.LOG, "MapScreen: MapScreen()" );
 
         this.game = g;
 		
-		map = TerraNova.mapManager.createMap("NorthAmerica");
+		map = g.mapManager.createMap( mapId );
         vertexData = map.getVerts();
 		
         screenWidth = Gdx.graphics.getWidth();
@@ -90,7 +90,7 @@ public class MapScreen implements Screen {
 
         camera = new OrthographicCamera( );
         camera.viewportWidth = ( worldMaxX - worldMinX ) / 2;
-        camera.viewportHeight = camera.viewportWidth * screenHeight / screenWidth;
+        camera.viewportHeight = (float) (1.5 * camera.viewportWidth * screenHeight / screenWidth);
         camera.near = 0;
         camera.far = 1000f;
         camera.position.set( 0f , 0f, 1000f);
@@ -251,7 +251,7 @@ public class MapScreen implements Screen {
         screenWidth = w;
         screenHeight = h;
         camera.viewportWidth = ( worldMaxX - worldMinX ) / 2;
-        camera.viewportHeight = camera.viewportWidth * h / w;
+        camera.viewportHeight = (float) (1.5 * camera.viewportWidth * h / w);
         camera.update();
     }
 

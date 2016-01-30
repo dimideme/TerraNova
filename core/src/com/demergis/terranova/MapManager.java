@@ -36,7 +36,7 @@ public class MapManager {
     private float longMax = 1000f;      // right (eastern) bound of world space, in miles
     private float latSpan = latMax - latMin;    // total height of world space, in miles
     private float longSpan = longMax - longMin; // total width of world space, in miles
-    private float pointsPerUnitScalingFactor = 0.1f;                        // represents the number of points to place per unit of world coordinates
+    private float pointsPerUnitScalingFactor = 0.4f;                        // represents the number of points to place per unit of world coordinates
                                                                             // e.g. a scaling factor of 10 means that 200 points will be used for a width of 2000 miles
     private int pointsX = (int) ( longSpan * pointsPerUnitScalingFactor );			// number of points placed along X axis (number of columns)
     private int pointsY = (int) ( latSpan * pointsPerUnitScalingFactor );			// number of points placed along Y axis (number of rows)
@@ -52,12 +52,12 @@ public class MapManager {
         delIndices = new ShortArray();
         triangles = new ArrayList<Triangle>();
 
-        zCeiling = 500f;
+        zCeiling = 1000f;
         zFloor = 0f;
-        zSeaLevel = 100f;
+        zSeaLevel = 200f;
         zMax = zFloor;
         zMin = zCeiling;
-        zSpan = zMax - zMin;
+        zSpan = zMax - zSeaLevel;
 
     }
 
@@ -111,12 +111,12 @@ public class MapManager {
 
         for( int i = 1; i < pointsX-1; i++ ) {
             for( int j = 1; j < pointsY-1; j++ ) {
-                points[i][j].z =
-                        0.2f * ( 60 + (float)Math.sin( i * 1 * Math.PI / pointsX ) ) +
-                                0.2f * ( 60 + (float)Math.sin( i * 10 * Math.PI / pointsX ) ) +
-                                0.2f * ( 60 + (float)Math.sin( j * 1 * Math.PI / pointsY ) ) +
-                                0.2f * ( 60 + (float)Math.sin( j * 10 * Math.PI / pointsY ) ) +
-                                0.2f * ( 60 + random.nextFloat() - 0.5f);
+                points[i][j].z = zCeiling * (
+                                0.2f * ( (float)Math.sin( i * 1 * Math.PI / pointsX ) ) +
+                                0.2f * ( (float)Math.sin( i * 10 * Math.PI / pointsX ) ) +
+                                0.2f * ( (float)Math.sin( j * 1 * Math.PI / pointsY ) ) +
+                                0.2f * ( (float)Math.sin( j * 10 * Math.PI / pointsY ) ) +
+                                0.2f * ( random.nextFloat() - 0.5f) );
                 float z = points[i][j].z;
                 if( z > zMax ) zMax = z;
                 if( z < zMin ) zMin = z;
@@ -142,9 +142,12 @@ public class MapManager {
             for( int j = 1; j < pointsY; j++ ) {
                 int pixelX = (int)( ( points[i][j].x - longMin ) * imageWidth / longSpan );
                 int pixelY = imageHeight - (int)( ( points[i][j].y - latMin ) * imageHeight / latSpan );
-                float z = (float) ( pixmap.getPixel( pixelX, pixelY ) * zCeiling / Math.pow(2, 32) );
+                int pixelValue = pixmap.getPixel( pixelX, pixelY );
 
-                //if ( z < 0 ) Gdx.app.log( TerraNova.LOG, "MapManager: loadMap(): readZValues(): Pixel (" + i + ", " + j + "), getPixel = " + pixmap.getPixel( pixelX, pixelY ) + ", resulting z = " + z  );
+                Color c = new Color();
+                Color.rgb888ToColor( c, pixelValue );
+                float z = (float) ( ( pixelValue ) / Math.pow(2, 32) ) * zCeiling;
+                if ( z < 0 ) z+= zCeiling;  // compensate for the fact that very high altitude pixels may be interpreted as negative numbers due to using signed 32-bit integer
 
                 points[i][j].z = z;
                 if( z > zMax ) zMax = z;
@@ -153,7 +156,7 @@ public class MapManager {
             }
         }
 
-        //Gdx.app.log( TerraNova.LOG, "MapManager: loadMap(): readZValues(): zMax: " + zMax + ", zMin: " + zMin );
+        Gdx.app.log( TerraNova.LOG, "MapManager: loadMap(): readZValues(): zMax: " + zMax + ", zMin: " + zMin );
     }
 
 
@@ -177,10 +180,10 @@ public class MapManager {
         for( int i = 0; i < delIndices.size-2; i+=3 ) {
             Triangle triangle = new Triangle();
             triangle.vertices[0] = new Vector3(
-                    delPoints[ 2 * delIndices.get(i+0) ],
-                    delPoints[ 2 * delIndices.get(i+0) + 1 ],
-                    points[ delIndices.get(i+0) / pointsY ]
-                            [ delIndices.get(i+0) % pointsY ].z );
+                    delPoints[ 2 * delIndices.get(i) ],
+                    delPoints[ 2 * delIndices.get(i) + 1 ],
+                    points[ delIndices.get(i) / pointsY ]
+                            [ delIndices.get(i) % pointsY ].z );
             triangle.vertices[1] = new Vector3(
                     delPoints[ 2 * delIndices.get(i+1) ],
                     delPoints[ 2 * delIndices.get(i+1) + 1 ],
@@ -221,7 +224,7 @@ public class MapManager {
             }
         }
         zMin = 0;
-        zSpan = zMax - zMin;
+        zSpan = zMax - zSeaLevel;
     }
 
     public void determineEnvironment() {
@@ -244,21 +247,44 @@ public class MapManager {
     }
 
     private void determineColorAndAddToMap(float zMax) {
-        Gdx.app.log( TerraNova.LOG, "MapManager: generateRandomMap(): setting triangle color and adding to map" );
+        Gdx.app.log( TerraNova.LOG, "MapManager: determineColorAndAddToMap(): setting triangle color and adding to map" );
+
+        FileHandle file = Gdx.files.internal( "images/terrain.png" );
+        Pixmap pixmap = new Pixmap( file );
+
+        int imageWidth = pixmap.getWidth();
+        int imageHeight = pixmap.getHeight();
+
         for( Triangle t : triangles ) {
 
             Color[] color = new Color[3];   // array of colors for the three points of the triangle
             for( int i = 0; i < 3; i++ ) {
 
-                if( t.vertices[i].z <= zSeaLevel && !t.isUnderwater )
-                    color[i] = new Color( 237f/256, 201f/256, 175f/256, 1.0f );   // Sand
-                else if( t.vertices[i].z <= zSeaLevel && t.isUnderwater )
+//                if( t.vertices[i].z <= zSeaLevel && t.isUnderwater )
+//                    color[i] = new Color( 0f, 0f, 0.5f, 1.0f );  // Navy Blue
+//                else if( t.vertices[i].z <= zSeaLevel && !t.isUnderwater )
+//                    color[i] = new Color( 237f/256, 201f/256, 175f/256, 1.0f );   // Sand
+//                else if( t.vertices[i].z > 0.8f * zSpan + zSeaLevel ) color[i] = Color.WHITE;
+//                else if( t.vertices[i].z > 0.7f * zSpan + zSeaLevel ) color[i] = Color.DARK_GRAY;
+//                else if( t.vertices[i].z > 0.6f * zSpan + zSeaLevel ) color[i] = Color.GRAY;
+//                else if( t.vertices[i].z > 0.4f * zSpan + zSeaLevel ) color[i] = new Color( 0.4f, 0.4f, 0.3f, 1.0f ); // DARK BROWN
+//                else if( t.vertices[i].z > 0.2f * zSpan + zSeaLevel ) color[i] = new Color( 0.8f, 0.8f, 0.3f, 1.0f ); // LIGHT BROWN
+//                else color[i] = Color.GREEN;
+
+                if( t.vertices[i].z <= zSeaLevel && t.isUnderwater )
                     color[i] = new Color( 0f, 0f, 0.5f, 1.0f );  // Navy Blue
-                else if( t.vertices[i].z > 0.8f * zSpan + zMin ) color[i] = Color.WHITE;
-                else if( t.vertices[i].z > 0.7f * zSpan + zMin ) color[i] = Color.DARK_GRAY;
-                else if( t.vertices[i].z > 0.6f * zSpan + zMin ) color[i] = Color.GRAY;
-                else if( t.vertices[i].z > 0.4f * zSpan + zMin ) color[i] = new Color( 0.8f, 0.8f, 0.3f, 1.0f ); // BROWN
-                else color[i] = Color.GREEN;
+                else {
+                    Random random = new Random();
+                    int pixel;
+                    int pixelX, pixelY;
+                    pixelX = (int)(random.nextFloat() * imageWidth);
+                    pixelY = (int)( ( 1 - ( t.vertices[i].z - zSeaLevel) / zSpan) * imageHeight );
+                    pixel = pixmap.getPixel( pixelX, pixelY );
+                    //Gdx.app.log( TerraNova.LOG, "MapManager: determineColorAndAddToMap(): for zvalue: "+ t.vertices[i].z + ", selecting pixel " + pixelX + ", "+ pixelY + ", with value " + pixel );
+                    Color c = new Color();
+                    Color.rgba8888ToColor(c, pixel);
+                    color[i] = new Color( c.r, c.g, c.b, c.a );
+                }
 
             }
 

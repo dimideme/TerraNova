@@ -21,34 +21,45 @@ public class MenuScreen implements Screen {
     private Skin skin;
     private Stage stage;
     private SpriteBatch batch;
+    private TerraNova game;
+
+    private int screenWidth, screenHeight;
+    private int buttonWidth, buttonHeight;
+
+    TextButton randomMapButton, northAmericaButton, japanButton, irelandButton, exitButton;
 
 
 	public MenuScreen( TerraNova g ) {
-        final TerraNova game = g;
+        game = g;
         this.batch = game.batch;
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
 
+        screenWidth = Gdx.graphics.getWidth();
+        screenHeight = Gdx.graphics.getHeight();
+
+        buttonWidth = screenWidth / 4;
+        buttonHeight = screenHeight / 10;
         createBasicSkin();
 
-        final TextButton randomMapButton = new TextButton("Random Map", skin); // Use the initialized skin
-        randomMapButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 + 200);
+        randomMapButton = new TextButton("Random Map", skin);
+        randomMapButton.setPosition( screenWidth / 2 - buttonWidth / 2, screenHeight / 2 + 2.5f * buttonHeight);
         stage.addActor(randomMapButton);
 
-        final TextButton northAmericaButton = new TextButton("North America", skin); // Use the initialized skin
-        northAmericaButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 + 100);
+        northAmericaButton = new TextButton("North America", skin);
+        northAmericaButton.setPosition( screenWidth / 2 - buttonWidth / 2, screenHeight / 2 + buttonHeight / 2);
         stage.addActor(northAmericaButton);
 
-        final TextButton japanButton = new TextButton("Japan", skin); // Use the initialized skin
-        japanButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 );
+        japanButton = new TextButton("Japan", skin);
+        japanButton.setPosition( screenWidth / 2 - buttonWidth / 2, screenHeight / 2 - buttonHeight / 2);
         stage.addActor(japanButton);
 
-        final TextButton irelandButton = new TextButton("Ireland", skin); // Use the initialized skin
-        irelandButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 - 100 );
+        irelandButton = new TextButton("Ireland", skin);
+        irelandButton.setPosition( screenWidth / 2 - buttonWidth / 2, screenHeight / 2 - 1.5f * buttonHeight );
         stage.addActor(irelandButton);
 
-        final TextButton exitButton = new TextButton("Exit", skin); // Use the initialized skin
-        exitButton.setPosition(Gdx.graphics.getWidth() / 2 - Gdx.graphics.getWidth() / 8, Gdx.graphics.getHeight() / 2 - 200 );
+        exitButton = new TextButton("Exit", skin);
+        exitButton.setPosition( screenWidth / 2 - buttonWidth / 2, screenHeight / 2 - 3.5f * buttonHeight );
         stage.addActor(exitButton);
 
         // Add a listener to the button. ChangeListener is fired when the button's checked state changes, eg when clicked,
@@ -83,13 +94,13 @@ public class MenuScreen implements Screen {
 	}
 
     private void createBasicSkin(){
-        // Create a font
-        BitmapFont font = new BitmapFont();
+        // Create a skin, add a font to skin
         skin = new Skin();
+        BitmapFont font = new BitmapFont();
         skin.add("default", font);
 
-        // Create a texture
-        Pixmap pixmap = new Pixmap((int)Gdx.graphics.getWidth()/4,(int)Gdx.graphics.getHeight()/10, Pixmap.Format.RGB888);
+        // Create a basic button texture
+        Pixmap pixmap = new Pixmap( buttonWidth, buttonHeight, Pixmap.Format.RGB888);
         pixmap.setColor(Color.WHITE);
         pixmap.fill();
         skin.add("background",new Texture(pixmap));
@@ -107,11 +118,12 @@ public class MenuScreen implements Screen {
 
     @Override
     public void show() {
+        Gdx.app.log( TerraNova.LOG, "MenuScreen: show()" );
     }
 
     @Override
     public void render( float delta ) {
-        Gdx.app.log(TerraNova.LOG, "MenuScreen: render()");
+        //Gdx.app.log(TerraNova.LOG, "MenuScreen: render()");
         Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));

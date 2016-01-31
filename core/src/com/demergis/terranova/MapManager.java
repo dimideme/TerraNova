@@ -63,7 +63,7 @@ public class MapManager {
 
     public ContinentMap createMap( String mapId ) {
 
-        Gdx.app.log( TerraNova.LOG, "MapManager: getMap()" );
+        Gdx.app.log(TerraNova.LOG, "MapManager: getMap()");
 
         // Step 1 - scatter points
         scatterPoints(new Random());
@@ -76,10 +76,6 @@ public class MapManager {
 
         // Step 3 - set negative z-values to 0
         clipNegativeZValues();
-
-        // Step 4 - compute Delaunay indices, and use them to build triangles
-        //computeDelaunayIndices();
-        //createDelaunayTriangles();
 
         // Step 4alt - use a naive method to build triangles - simpler version of Delaunay method
         createSimpleTriangles();
@@ -96,13 +92,22 @@ public class MapManager {
 
     private void scatterPoints(Random random) {
         Gdx.app.log( TerraNova.LOG, "MapManager: generateRandomMap(): scattering points" );
+        float xMin = 0;
+        float xMax = 0;
+        float yMin = 0;
+        float yMax = 0;
         for( int i = 0; i < pointsX; i++ ) {
             for( int j = 0; j < pointsY; j++ ) {
                 float xPos = ( ( longSpan * ( i + random.nextFloat() - 0.5f ) ) / pointsX ) + longMin;
                 float yPos = ( ( latSpan * ( j + random.nextFloat() - 0.5f ) ) / pointsY ) + latMin;
                 points[i][j] = new Vector3( xPos, yPos, zFloor );
+                if ( xMin > xPos ) xMin = xPos;
+                if ( xMax < xPos ) xMax = xPos;
+                if ( yMin > yPos ) yMin = yPos;
+                if ( yMax < yPos ) yMax = yPos;
             }
         }
+        Gdx.app.log( TerraNova.LOG, "MapManager: generateRandomMap(): scatterPoints(): xMin: " + xMin + ", xMax: " + xMax + ", " + yMin + ", yMax: " + yMax );
     }
 
     // This method is used for random maps, z-values are computed with a sum-of-sines method
@@ -111,18 +116,22 @@ public class MapManager {
 
         for( int i = 1; i < pointsX-1; i++ ) {
             for( int j = 1; j < pointsY-1; j++ ) {
-                points[i][j].z = zCeiling * (
-                                0.2f * ( (float)Math.sin( i * 1 * Math.PI / pointsX ) ) +
-                                0.2f * ( (float)Math.sin( i * 10 * Math.PI / pointsX ) ) +
-                                0.2f * ( (float)Math.sin( j * 1 * Math.PI / pointsY ) ) +
-                                0.2f * ( (float)Math.sin( j * 10 * Math.PI / pointsY ) ) +
-                                0.2f * ( random.nextFloat() - 0.5f) );
+                points[i][j].z = zCeiling / 11.875f * (
+                                5f * ( (float)-Math.cos( 2 * Math.PI * i / pointsX) ) +
+                                0.5f * ( (float)-Math.cos( 4 * Math.PI * i / pointsX) ) +
+                                0.25f * ( (float)-Math.cos( 8 * Math.PI * i / pointsX) ) +
+                                0.125f * ( (float)-Math.cos( 16 * Math.PI * i / pointsX) ) +
+                                0.0625f * ( (float)-Math.cos( 32 * Math.PI * i / pointsX) ) +
+                                5f * ( (float)-Math.cos( 2 * Math.PI * j / pointsY) ) +
+                                0.5f * ( (float)-Math.cos( 4 * Math.PI * j / pointsY) ) +
+                                0.25f * ( (float)-Math.cos( 8 * Math.PI * j / pointsY) ) +
+                                0.125f * ( (float)-Math.cos( 16 * Math.PI * j / pointsY) ) +
+                                0.0625f * ( (float)-Math.cos( 32 * Math.PI * j / pointsY ) ) );
                 float z = points[i][j].z;
                 if( z > zMax ) zMax = z;
                 if( z < zMin ) zMin = z;
-                zSpan = zMax - zMin;
-
             }
+            zSpan = zMax - zMin;
         }
 
         System.out.println("zmin, zmax = " + zMin + ", " + zMax);
@@ -145,7 +154,7 @@ public class MapManager {
                 int pixelValue = pixmap.getPixel( pixelX, pixelY );
 
                 Color c = new Color();
-                Color.rgb888ToColor( c, pixelValue );
+                Color.rgb888ToColor(c, pixelValue);
                 float z = (float) ( ( pixelValue ) / Math.pow(2, 32) ) * zCeiling;
                 if ( z < 0 ) z+= zCeiling;  // compensate for the fact that very high altitude pixels may be interpreted as negative numbers due to using signed 32-bit integer
 
@@ -157,45 +166,6 @@ public class MapManager {
         }
 
         Gdx.app.log( TerraNova.LOG, "MapManager: loadMap(): readZValues(): zMax: " + zMax + ", zMin: " + zMin );
-    }
-
-
-
-    private void computeDelaunayIndices() {
-        Gdx.app.log( TerraNova.LOG, "MapManager: generateRandomMap(): computing Delaunay indices" );
-        DelaunayTriangulator dt = new DelaunayTriangulator();
-        int count = 0;
-        for( int i = 0; i < pointsX; i++ ) {
-            for( int j = 0; j < pointsY; j++ ) {
-                delPoints[count++] = points[i][j].x;
-                delPoints[count++] = points[i][j].y;
-            }
-        }
-
-        delIndices = dt.computeTriangles( delPoints, 0, delPoints.length / 2, false );
-    }
-
-    private void createDelaunayTriangles() {
-        Gdx.app.log( TerraNova.LOG, "MapManager: generateRandomMap(): constructing triangles" );
-        for( int i = 0; i < delIndices.size-2; i+=3 ) {
-            Triangle triangle = new Triangle();
-            triangle.vertices[0] = new Vector3(
-                    delPoints[ 2 * delIndices.get(i) ],
-                    delPoints[ 2 * delIndices.get(i) + 1 ],
-                    points[ delIndices.get(i) / pointsY ]
-                            [ delIndices.get(i) % pointsY ].z );
-            triangle.vertices[1] = new Vector3(
-                    delPoints[ 2 * delIndices.get(i+1) ],
-                    delPoints[ 2 * delIndices.get(i+1) + 1 ],
-                    points[ delIndices.get(i+1) / pointsY ]
-                            [ delIndices.get(i+1) % pointsY ].z );
-            triangle.vertices[2] = new Vector3(
-                    delPoints[ 2 * delIndices.get(i+2) ],
-                    delPoints[ 2 * delIndices.get(i+2) + 1 ],
-                    points[ delIndices.get(i+2) / pointsY ]
-                            [ delIndices.get(i+2) % pointsY ].z );
-            triangles.add( triangle );
-        }
     }
 
     private void createSimpleTriangles() {
@@ -259,7 +229,7 @@ public class MapManager {
 
             Color[] color = new Color[3];   // array of colors for the three points of the triangle
             for( int i = 0; i < 3; i++ ) {
-
+//                 Old method
 //                if( t.vertices[i].z <= zSeaLevel && t.isUnderwater )
 //                    color[i] = new Color( 0f, 0f, 0.5f, 1.0f );  // Navy Blue
 //                else if( t.vertices[i].z <= zSeaLevel && !t.isUnderwater )

@@ -3,14 +3,12 @@ package com.demergis.terranova;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class TerraNova extends Game {
 
     public static String LOG = "LOG";
-    public static boolean DEV_MODE = true;
 
     public SpriteBatch batch;
     public BitmapFont bitmapFont;
@@ -46,10 +44,10 @@ public class TerraNova extends Game {
 	}
 
     @Override
-    public void resize( int width, int height ) {
+    public void resize( int w, int h ) {
         Gdx.app.log( TerraNova.LOG, "TerraNova: resize()" );
-        this.screenWidth = width;
-        this.screenHeight = height;
+        screenWidth = w;
+        screenHeight = h;
     }
 
     @Override

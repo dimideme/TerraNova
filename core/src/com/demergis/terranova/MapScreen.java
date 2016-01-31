@@ -25,6 +25,7 @@ public class MapScreen implements Screen {
 
 	private OrthographicCamera camera;
     private Viewport viewport;
+    private Matrix4 uiMatrix;
 
 	private Mesh mesh;
 	private ShaderProgram shader;
@@ -82,19 +83,21 @@ public class MapScreen implements Screen {
 
         this.game = g;
 		
-		map = g.mapManager.createMap( mapId );
+		map = g.mapManager.createMap(mapId);
         vertexData = map.getVerts();
 		
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
 
         camera = new OrthographicCamera( );
-        camera.viewportWidth = ( worldMaxX - worldMinX ) / 2;
-        camera.viewportHeight = (float) (1.5 * camera.viewportWidth * screenHeight / screenWidth);
+        setViewportSize();
         camera.near = 0;
         camera.far = 1000f;
-        camera.position.set( 0f , 0f, 1000f);
+        camera.position.set(0f, 0f, 1000f);
+        camera.lookAt(0f, 0f, 0f);
         camera.update();
+
+        setProjectionMatrix();
         
 	    mesh = new Mesh(true, MAX_VERTS, 0,
 	            new VertexAttribute(Usage.Position, POSITION_COMPONENTS, "a_position"),
@@ -115,7 +118,7 @@ public class MapScreen implements Screen {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getWidth());
+        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         
         // Update the camera
         updateCamera();
@@ -124,16 +127,13 @@ public class MapScreen implements Screen {
         renderMap();
 
         // Draw UI elements on top
-        Matrix4 uiMatrix = camera.combined.cpy();
-        uiMatrix.setToOrtho2D(0, 0, screenWidth, screenHeight);
-        game.batch.setProjectionMatrix(uiMatrix);
         game.batch.begin();
-
-        game.bitmapFont.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond() + ", timeRatio: " + TimeManager.timeRatio, 20, 100);
-        game.bitmapFont.draw(game.batch, "AWSD to move camera, ER rotate, ZQ forward/back, CV zoom in/out, HLJK change field of view", 20, 80);
-        game.bitmapFont.draw( game.batch, "Camera Position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z, 20, 60);
-        game.bitmapFont.draw( game.batch, "Camera Params: Near: " + camera.near + ", Far: " + camera.far + ", Zoom: " + camera.zoom, 20, 40);
-        game.bitmapFont.draw( game.batch, "Camera Viewport: Width: " + camera.viewportWidth + ", Height: " + camera.viewportHeight, 20, 20);
+        game.bitmapFont.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond() + ", timeRatio: " + TimeManager.timeRatio, 20, 120);
+        game.bitmapFont.draw(game.batch, "AWSD to move camera, ER rotate, ZQ forward/back, CV zoom in/out, HLJK change field of view", 20, 100);
+        game.bitmapFont.draw(game.batch, "Camera Position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z, 20, 80);
+        game.bitmapFont.draw(game.batch, "Camera Params: Near: " + camera.near + ", Far: " + camera.far + ", Zoom: " + camera.zoom, 20, 60);
+        game.bitmapFont.draw(game.batch, "Camera Viewport: Width: " + camera.viewportWidth + ", Height: " + camera.viewportHeight, 20, 40);
+        game.bitmapFont.draw(game.batch, "Screen: Width: " + screenWidth + ", screenHeight: " + screenHeight, 20, 20 );
         game.batch.end();
         
     }
@@ -161,7 +161,7 @@ public class MapScreen implements Screen {
         shader.setUniformMatrix("u_projTrans", camera.combined);
 
         // render the mesh
-        mesh.render(shader, GL20.GL_TRIANGLES, 0, map.getVertexCount() );
+        mesh.render(shader, GL20.GL_TRIANGLES, 0, map.getVertexCount());
 
         shader.end();
 
@@ -173,19 +173,19 @@ public class MapScreen implements Screen {
 
 		// update the camera position
         if(Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)){
-            camera.translate(-5.0f, 0.0f, 0.0f);
+            camera.translate(-12.0f, 0.0f, 0.0f);
             //Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z );
         }
         if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)){
-            camera.translate(5.0f, 0.0f, 0.0f);
+            camera.translate(12.0f, 0.0f, 0.0f);
             //Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
         }
         if(Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W)){
-            camera.translate(0.0f, 5.0f, 0.0f);
+            camera.translate(0.0f, 12.0f, 0.0f);
             //Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
         }
         if(Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S)){
-            camera.translate(0.0f, -5.0f, 0.0f);
+            camera.translate(0.0f, -12.0f, 0.0f);
             //Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new camera position: " + camera.position.x + ", " + camera.position.y + ", " + camera.position.z);
         }
         if(Gdx.input.isKeyPressed(Input.Keys.Z)){
@@ -229,13 +229,14 @@ public class MapScreen implements Screen {
 
         // Clamp camera zoom level to ensure not too far zoomed out or in
         camera.zoom = MathUtils.clamp(camera.zoom, 0.1f, (worldMaxX - worldMinX)/camera.viewportWidth);
+        camera.zoom = MathUtils.clamp(camera.zoom, 0.1f, (worldMaxY - worldMinY)/camera.viewportHeight);
 
-        float effectiveViewportWidth = camera.viewportWidth * camera.zoom;
-        float effectiveViewportHeight = camera.viewportHeight * camera.zoom;
+        float effectiveViewportWidth = camera.viewportWidth * camera.zoom;      // represents width of viewport in world coordinates
+        float effectiveViewportHeight = camera.viewportHeight * camera.zoom;    // represents height of viewport in world coordinates
 
         // Clamp camera position in order to stay within world borders
-        camera.position.x = MathUtils.clamp(camera.position.x, worldMinX + effectiveViewportWidth / 2f, worldMaxX - effectiveViewportWidth / 2f);
-        camera.position.y = MathUtils.clamp(camera.position.y, worldMinY + effectiveViewportHeight / 2f, worldMaxY - effectiveViewportHeight / 2f);
+        camera.position.x = MathUtils.clamp(camera.position.x, worldMinX + effectiveViewportWidth / 2f, worldMaxX - effectiveViewportWidth / 2f );
+        camera.position.y = MathUtils.clamp(camera.position.y, worldMinY + effectiveViewportHeight / 2f, worldMaxY - effectiveViewportHeight / 2f );
 
         camera.update();
 	}
@@ -250,9 +251,20 @@ public class MapScreen implements Screen {
         Gdx.app.log(TerraNova.LOG, "MapScreen: resize()");
         screenWidth = w;
         screenHeight = h;
+        setViewportSize();
+        setProjectionMatrix();
+    }
+
+    public void setViewportSize() {
         camera.viewportWidth = ( worldMaxX - worldMinX ) / 2;
-        camera.viewportHeight = (float) (1.5 * camera.viewportWidth * h / w);
-        camera.update();
+        camera.viewportHeight = camera.viewportWidth * screenHeight / screenWidth;
+        updateCamera();
+    }
+
+    public void setProjectionMatrix() {
+        uiMatrix = camera.combined.cpy();
+        uiMatrix.setToOrtho2D( 0, 0, screenWidth, screenHeight );
+        game.batch.setProjectionMatrix(uiMatrix);
     }
 
     @Override

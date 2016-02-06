@@ -20,7 +20,6 @@ public class MenuScreen implements Screen {
 
     private Skin skin;
     private Stage stage;
-    private SpriteBatch batch;
     private TerraNova game;
 
     private int screenWidth, screenHeight;
@@ -31,7 +30,6 @@ public class MenuScreen implements Screen {
 
 	public MenuScreen( TerraNova g ) {
         game = g;
-        this.batch = game.batch;
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
 
@@ -141,6 +139,11 @@ public class MenuScreen implements Screen {
     @Override
     public void hide() {
         Gdx.app.log( TerraNova.LOG, "MenuScreen: hide()" );
+        // hide() is called when the screen changes to mapScreen
+        // Unless the new screen sets a new ipnutprocessor, need to disable this inputprocessor!
+        Gdx.input.setInputProcessor(null);
+        // dispose of the screen if we don't plan to re-use it
+        this.dispose();
     }
 
     @Override
@@ -155,7 +158,7 @@ public class MenuScreen implements Screen {
 
     @Override
     public void dispose() {
-        Gdx.app.log( TerraNova.LOG, "MenuScreen: dispose()" );
+        Gdx.app.log(TerraNova.LOG, "MenuScreen: dispose()");
         stage.dispose();
         skin.dispose();
     }

@@ -14,21 +14,18 @@ public class InputManager {
     public static void update() {
         keyForce.x = 0;
         keyForce.y = 0;
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            Gdx.app.log(TerraNova.LOG, "LEFT");
             keyForce.x -=1;
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             keyForce.x +=1;
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             keyForce.y -=1;
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             keyForce.y +=1;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            Gdx.app.log("KEYPRESS", "SPACE");
-            keyForce.y +=100;
         }
     }
 }

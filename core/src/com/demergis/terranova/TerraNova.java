@@ -10,6 +10,8 @@ public class TerraNova extends Game {
 
     public static String LOG = "LOG";
 
+    public static String DEV_MODE = "DEBUG";
+
     public SpriteBatch batch;
     public BitmapFont bitmapFont;
 
@@ -37,6 +39,10 @@ public class TerraNova extends Game {
         super.render();  // Need to call this immediately after setScreen, otherwise screens won't render!
 
 	}
+
+    public MapManager getMapManager() {
+        return mapManager;
+    }
 
 	@Override
 	public void render () {

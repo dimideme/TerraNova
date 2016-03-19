@@ -1,33 +1,19 @@
 package com.demergis.terranova;
 
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Random;
-
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ShortArray;
-import com.badlogic.gdx.math.DelaunayTriangulator;
-
 
 public class MapManager {
 
     private final ContinentMap map;
 
     private Vector3[][] points;  		// 2D array of 3D points to be used as corners of triangles
-    private float[] delPoints;			// 1D array of 2D points, pairs of alternating x and y values
-    private ShortArray delIndices;		// result of delaunay triangulation, list of indices into delPoint pairs
     private ArrayList<Triangle> triangles;   // final list of triangles, with x,y,z coordinates
 
     private float latMin = -1000f;      // upper (northern) bound of world space, in miles
@@ -48,8 +34,6 @@ public class MapManager {
         map = new ContinentMap();
 
         points = new Vector3[pointsX][pointsY];
-        delPoints = new float[pointsX*pointsY*2];
-        delIndices = new ShortArray();
         triangles = new ArrayList<Triangle>();
 
         zCeiling = 1000f;
@@ -98,8 +82,8 @@ public class MapManager {
         float yMax = 0;
         for( int i = 0; i < pointsX; i++ ) {
             for( int j = 0; j < pointsY; j++ ) {
-                float xPos = ( ( longSpan * ( i + random.nextFloat() - 0.5f ) ) / pointsX ) + longMin;
-                float yPos = ( ( latSpan * ( j + random.nextFloat() - 0.5f ) ) / pointsY ) + latMin;
+                float xPos = ( ( longSpan * i ) / pointsX ) + longMin;
+                float yPos = ( ( latSpan * j ) / pointsY ) + latMin;
                 points[i][j] = new Vector3( xPos, yPos, zFloor );
                 if ( xMin > xPos ) xMin = xPos;
                 if ( xMax < xPos ) xMax = xPos;
@@ -107,7 +91,7 @@ public class MapManager {
                 if ( yMax < yPos ) yMax = yPos;
             }
         }
-        Gdx.app.log( TerraNova.LOG, "MapManager: generateRandomMap(): scatterPoints(): xMin: " + xMin + ", xMax: " + xMax + ", " + yMin + ", yMax: " + yMax );
+        Gdx.app.log(TerraNova.LOG, "MapManager: generateRandomMap(): scatterPoints(): xMin: " + xMin + ", xMax: " + xMax + ", " + yMin + ", yMax: " + yMax);
     }
 
     // This method is used for random maps, z-values are computed with a sum-of-sines method
@@ -165,7 +149,7 @@ public class MapManager {
             }
         }
 
-        Gdx.app.log( TerraNova.LOG, "MapManager: loadMap(): readZValues(): zMax: " + zMax + ", zMin: " + zMin );
+        Gdx.app.log(TerraNova.LOG, "MapManager: loadMap(): readZValues(): zMax: " + zMax + ", zMin: " + zMin);
     }
 
     private void createSimpleTriangles() {
@@ -203,8 +187,14 @@ public class MapManager {
         for( Triangle t : triangles ) {
 
             int numPointsAboveSeaLevel = 0;
+
             for( int i = 0; i < 3; i++ ) {
-                if ( t.vertices[i].z > zSeaLevel ) numPointsAboveSeaLevel++;
+
+                Vector3 vertex = t.vertices[i];
+                if ( vertex.z > zSeaLevel ) {
+                    numPointsAboveSeaLevel++;
+                }
+
             }
             t.isUnderwater = ( numPointsAboveSeaLevel == 0 );
             t.isCoastalPoint = ( numPointsAboveSeaLevel == 1 );
@@ -229,19 +219,8 @@ public class MapManager {
 
             Color[] color = new Color[3];   // array of colors for the three points of the triangle
             for( int i = 0; i < 3; i++ ) {
-//                 Old method
-//                if( t.vertices[i].z <= zSeaLevel && t.isUnderwater )
-//                    color[i] = new Color( 0f, 0f, 0.5f, 1.0f );  // Navy Blue
-//                else if( t.vertices[i].z <= zSeaLevel && !t.isUnderwater )
-//                    color[i] = new Color( 237f/256, 201f/256, 175f/256, 1.0f );   // Sand
-//                else if( t.vertices[i].z > 0.8f * zSpan + zSeaLevel ) color[i] = Color.WHITE;
-//                else if( t.vertices[i].z > 0.7f * zSpan + zSeaLevel ) color[i] = Color.DARK_GRAY;
-//                else if( t.vertices[i].z > 0.6f * zSpan + zSeaLevel ) color[i] = Color.GRAY;
-//                else if( t.vertices[i].z > 0.4f * zSpan + zSeaLevel ) color[i] = new Color( 0.4f, 0.4f, 0.3f, 1.0f ); // DARK BROWN
-//                else if( t.vertices[i].z > 0.2f * zSpan + zSeaLevel ) color[i] = new Color( 0.8f, 0.8f, 0.3f, 1.0f ); // LIGHT BROWN
-//                else color[i] = Color.GREEN;
 
-                if( t.vertices[i].z <= zSeaLevel && t.isUnderwater )
+                if( t.vertices[i].z < zSeaLevel )
                     color[i] = new Color( 0f, 0f, 0.5f, 1.0f );  // Navy Blue
                 else {
                     Random random = new Random();
@@ -263,6 +242,10 @@ public class MapManager {
                     t.vertices[1], color[1],
                     t.vertices[2], color[2]  );
         }
+    }
+
+    public void getCoastline() {
+
     }
 
 

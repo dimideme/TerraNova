@@ -2,6 +2,7 @@ package com.demergis.terranova;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.graphics.GL20;
@@ -58,7 +59,7 @@ public class MapScreen implements Screen {
 	public float[] vertexData = new float[MAX_VERTS * NUM_COMPONENTS];  	//The array which holds all the data, interleaved like so:
                                                                             // (x1, y1, z1, r1, g1, b1, a1, x2, y2, z2...)
 
-    private Ship newShip;
+    public Ship newShip;
 
 	public static final String VERT_SHADER =  
 			"attribute vec3 a_position;\n" +
@@ -99,8 +100,9 @@ public class MapScreen implements Screen {
         uiStage = new Stage( new ScreenViewport() );
         mapStage = new Stage();
 
-        Gdx.input.setInputProcessor( uiStage );
-        Gdx.input.setInputProcessor( mapStage );
+        // Add input processor
+        Gdx.input.setInputProcessor( uiStage );                 // Handles input from UI elements
+        Gdx.input.setInputProcessor( mapStage );                // Handles input from map elements
 
         world = new World( new Vector2( 0.0f, 0.0f), false );
 
@@ -139,6 +141,8 @@ public class MapScreen implements Screen {
             debugMatrix.scale(100.0f, 100.0f, 1.0f);
         }
 
+
+
 	}
 
     public World getWorld() {
@@ -155,6 +159,7 @@ public class MapScreen implements Screen {
 
         // Initialize gl graphics
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -190,9 +195,12 @@ public class MapScreen implements Screen {
             game.bitmapFont.draw(game.batch, "Camera Viewport: Width: " + camera.viewportWidth + ", Height: " + camera.viewportHeight, 20, 40);
             game.bitmapFont.draw(game.batch, "Screen: Width: " + screenWidth + ", screenHeight: " + screenHeight, 20, 20);
 
-            game.bitmapFont.draw(game.batch, "Ship Parameters (use arrow keys to move)", 800, 120);
-            game.bitmapFont.draw(game.batch, "Sprite Pos: X: " + newShip.getX() + ", Y: " + newShip.getY(), 800, 100);
-            game.bitmapFont.draw(game.batch, "Body Pos: X: " + newShip.getBody().getPosition().x + ", Y: " + newShip.getBody().getPosition().y, 800, 80);
+            game.bitmapFont.draw(game.batch, "Ship Parameters (use arrow keys to move)", 800, 140);
+            game.bitmapFont.draw(game.batch, "Sprite Pos: X: " + newShip.getX() + ", Y: " + newShip.getY(), 800, 120);
+            game.bitmapFont.draw(game.batch, "Body Pos: X: " + newShip.getBody().getPosition().x + ", Y: " + newShip.getBody().getPosition().y, 800, 100);
+            game.bitmapFont.draw(game.batch, "Body Ang: " + newShip.getBody().getAngle(), 1200, 80 );
+            game.bitmapFont.draw(game.batch, "Body Hdg: " + newShip.heading, 1000, 80 );
+            game.bitmapFont.draw(game.batch, "Body Crs: " + newShip.course, 800, 80 );
             game.bitmapFont.draw(game.batch, "Key Force: X: " + newShip.keyForce.x + ", Y: " + newShip.keyForce.y, 800, 60);
             game.bitmapFont.draw(game.batch, "Velocity: X: " + newShip.getBody().getLinearVelocity().x + ", Y: " + newShip.getBody().getLinearVelocity().y, 800, 40);
             game.bitmapFont.draw(game.batch, "Linear Damping: " + newShip.getBody().getLinearDamping() + ", Ang Damping: " + newShip.getBody().getAngularDamping(), 800, 20);
@@ -294,6 +302,7 @@ public class MapScreen implements Screen {
             camera.zoom/=1.05;
             //Gdx.app.log(TerraNova.LOG, "MapScreen: updateCamera(): new zoom: " + camera.zoom);
         }
+
 
         // Clamp camera zoom level to ensure not too far zoomed out or in
         camera.zoom = MathUtils.clamp(camera.zoom, 0.1f, (worldMaxX - worldMinX)/camera.viewportWidth);

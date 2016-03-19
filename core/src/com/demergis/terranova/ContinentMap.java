@@ -1,9 +1,12 @@
 package com.demergis.terranova;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector3;
 
 import com.badlogic.gdx.graphics.Color;
+
+import java.util.ArrayList;
 
 /**
  * Created by Dimitri on 1/24/2016.
@@ -36,8 +39,12 @@ public class ContinentMap {
     //The current index that we are pushing triangles into the array
     protected int idx = 0;
 
+    private ArrayList<Vector3> coastline;
+
     public ContinentMap() {
         Gdx.app.log( TerraNova.LOG, "ContinentMap: ContinentMap()" );
+
+        coastline = new ArrayList<Vector3>();
 
     }
 
@@ -79,5 +86,6 @@ public class ContinentMap {
         verts[idx++] = c3.b;
         verts[idx++] = c3.a;
     }
+    
 
 }
